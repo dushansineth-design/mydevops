@@ -5,6 +5,12 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 
   backend:
     build: ./mern-auth-backend
@@ -24,6 +30,15 @@ services:
       - "5173:80"
     depends_on:
       - backend
+
+  # frontend:
+  #   build: ./mern-auth-frontend
+  #   ports:
+  #     - "5173:3000"
+  #   volumes:
+  #     - ./mern-auth-frontend:/app
+  #   environment:
+  #     - CHOKIDAR_USEPOLLING=true
 
 volumes:
   mongo-data:

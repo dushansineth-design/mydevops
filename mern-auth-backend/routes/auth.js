@@ -15,7 +15,7 @@ router.post('/signup', async (req, res) => {
   if (existing) return res.status(400).json({ msg: 'Email in use' });
 
   const hash = await bcrypt.hash(password, 10);
-  const user = await User.create({ email, password: hash, role: 'user' });
+  const user = await User.create({ email, password: hash, role: 'admin' });
   res.status(201).json({ msg: 'User created', userId: user._id });
 });
 
@@ -31,12 +31,12 @@ router.post('/login', async (req, res) => {
   res.json({ msg: 'Logged in', token });
 });
 
-// ✅ Protected route for any logged-in user
+
 router.get('/dashboard', verifyUser, (req, res) => {
   res.json({ msg: `Welcome user ${req.userId}` });
 });
 
-// ✅ Admin-only route
+
 router.get('/admin', verifyAdmin, (req, res) => {
   res.json({ msg: `Welcome admin ${req.userId}` });
 });

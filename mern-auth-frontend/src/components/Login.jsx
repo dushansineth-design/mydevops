@@ -15,15 +15,18 @@ export default function Login() {
     try {
       const res = await axios.post('/auth/login', { email, password }, { withCredentials: true });
       console.log('Login response:', res.data);
+
+      localStorage.setItem("token", res.data.token);
+
       setType("success");
       setMsg("Login successful!");
-      setTimeout(() => {setMsg(""); navigate("/");}, 3000); 
+      setTimeout(() => {setMsg(""); navigate("/");}, 1000); 
       
     } catch (err) {
       console.error('Login error:', err.response?.data || err.message);
       setType("error");
       setMsg(err.response?.data?.msg || "Login failed");
-      setTimeout(() => setMsg(""), 3000);
+      setTimeout(() => setMsg(""), 1000);
     }
   };
 
