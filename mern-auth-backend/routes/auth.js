@@ -9,6 +9,9 @@ const router = express.Router();
 
 router.post('/signup', async (req, res) => {
   const { email, password } = req.body;
+
+  console.log('Signup request:', req.body);
+
   if (!email || !password) return res.status(400).json({ msg: 'Missing fields' });
 
   const existing = await User.findOne({ email });
