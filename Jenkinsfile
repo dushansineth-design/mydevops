@@ -4,8 +4,8 @@ pipeline {
     stages {
         stage('Build & Run Containers') {
             steps {
-                bat 'docker compose down'
-                bat 'docker compose up --build -d'
+                sh 'docker compose down || true'
+                sh 'docker compose up --build -d'
             }
         }
     }
