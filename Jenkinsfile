@@ -38,4 +38,24 @@ pipeline {
             }
         }
     }
+    }
+
+    post {
+        success {
+            script {
+                echo "Build Successful! Pushing tag to GitHub..."
+                // NOTE: To push back to GitHub, you need to configure credentials in Jenkins
+                // withId: 'github-credentials-id' is a placeholder for your Jenkins credential ID
+                
+                // sh '''
+                //     git config user.email "jenkins@example.com"
+                //     git config user.name "Jenkins CI"
+                //     git tag -a "deploy-${BUILD_NUMBER}" -m "Deployed build #${BUILD_NUMBER}"
+                //     git push origin "deploy-${BUILD_NUMBER}"
+                // '''
+                
+                echo "To enable auto-pushing tags, uncomment the script block above and configure Jenkins credentials."
+            }
+        }
+    }
 }
