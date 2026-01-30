@@ -50,7 +50,15 @@ pipeline {
             steps {
                 sh '''
                     export DOCKER_CONFIG=$(pwd)/.docker_config
-                    $DOCKER_CONFIG/cli-plugins/docker-compose up --build -d
+                    
+                    echo "--- DEBUG INFO ---"
+                    ls -l $DOCKER_CONFIG/cli-plugins
+                    $DOCKER_CONFIG/cli-plugins/docker-buildx version || echo "Direct execution failed"
+                    docker --config $DOCKER_CONFIG buildx version || echo "CLI execution failed"
+                    echo "------------------"
+
+                    # Use docker CLI wrapper to ensure plugins are loaded correctly
+                    docker --config $DOCKER_CONFIG compose up --build -d
                 '''
             }
         }
