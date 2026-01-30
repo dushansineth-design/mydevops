@@ -18,10 +18,12 @@ pipeline {
                 sh '''
                     # Set config to current workspace
                     export DOCKER_CONFIG=$(pwd)/.docker_config
+                    # Clean up previous bad installs
+                    rm -rf $DOCKER_CONFIG
                     mkdir -p $DOCKER_CONFIG/cli-plugins
                     
-                    # Install Buildx (Updated to v0.19.0)
-                    curl -SL https://github.com/docker/buildx/releases/download/v0.19.0/buildx-v0.19.0.linux-amd64 -o $DOCKER_CONFIG/cli-plugins/docker-buildx
+                    # Install Buildx (v0.17.1 is SAFE choice)
+                    curl -fSL https://github.com/docker/buildx/releases/download/v0.17.1/buildx-v0.17.1.linux-amd64 -o $DOCKER_CONFIG/cli-plugins/docker-buildx
                     chmod +x $DOCKER_CONFIG/cli-plugins/docker-buildx
                     
                     # Install Compose
