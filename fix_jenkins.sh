@@ -5,7 +5,7 @@ echo "🔍 Checking Docker Plugins..."
 
 # Define Paths
 PLUGIN_DIR="/usr/local/lib/docker/cli-plugins"
-BUILDX_URL="https://github.com/docker/buildx/releases/download/v0.11.2/buildx-v0.11.2.linux-amd64"
+BUILDX_URL="https://github.com/docker/buildx/releases/download/v0.31.1/buildx-v0.31.1.linux-amd64"
 COMPOSE_URL="https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64"
 
 # Ensure directory exists
