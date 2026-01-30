@@ -14,6 +14,7 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    console.log('Current Axios Base URL:', axios.defaults.baseURL);
     try {
       const res = await axios.post('/auth/login', { email, password });
       console.log('Login response:', res.data);
