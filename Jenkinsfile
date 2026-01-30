@@ -4,8 +4,6 @@ pipeline {
     environment {
         // Fix for Docker client/server version mismatch
         DOCKER_API_VERSION = '1.44'
-        // Force Docker to look for plugins in our local user directory
-        DOCKER_CONFIG = "${HOME}/.docker"
     }
 
     stages {
@@ -18,39 +16,40 @@ pipeline {
         stage('Setup Docker Plugins') {
             steps {
                 sh '''
+                    # Set config to current workspace
+                    export DOCKER_CONFIG=$(pwd)/.docker_config
                     mkdir -p $DOCKER_CONFIG/cli-plugins
+                    
                     # Install Buildx
                     curl -SL https://github.com/docker/buildx/releases/download/v0.11.2/buildx-v0.11.2.linux-amd64 -o $DOCKER_CONFIG/cli-plugins/docker-buildx
                     chmod +x $DOCKER_CONFIG/cli-plugins/docker-buildx
                     
-                    # Install Compose (Ensure we have a working plugin)
+                    # Install Compose
                     curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
                     chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+                    
+                    # Verify
+                    ls -l $DOCKER_CONFIG/cli-plugins
+                    $DOCKER_CONFIG/cli-plugins/docker-buildx version
                 '''
             }
         }
 
         stage('Clean Up') {
             steps {
-                // Stop any running containers
-                sh 'docker compose down --remove-orphans || true'
-            }
-        }
-
-        stage('Setup Docker Plugins') {
-            steps {
                 sh '''
-                    mkdir -p ~/.docker/cli-plugins
-                    curl -SL https://github.com/docker/buildx/releases/download/v0.11.2/buildx-v0.11.2.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
-                    chmod +x ~/.docker/cli-plugins/docker-buildx
+                    export DOCKER_CONFIG=$(pwd)/.docker_config
+                    $DOCKER_CONFIG/cli-plugins/docker-compose down --remove-orphans || true
                 '''
             }
         }
 
         stage('Build & Deploy') {
             steps {
-                // Build images and start containers in detached mode
-                sh 'docker compose up --build -d'
+                sh '''
+                    export DOCKER_CONFIG=$(pwd)/.docker_config
+                    $DOCKER_CONFIG/cli-plugins/docker-compose up --build -d
+                '''
             }
         }
 
