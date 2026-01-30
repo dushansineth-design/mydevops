@@ -22,8 +22,8 @@ pipeline {
                     rm -rf $DOCKER_CONFIG
                     mkdir -p $DOCKER_CONFIG/cli-plugins
                     
-                    # Install Buildx (Bump to v0.19.3)
-                    curl -fSL https://github.com/docker/buildx/releases/download/v0.19.3/buildx-v0.19.3.linux-amd64 -o $DOCKER_CONFIG/cli-plugins/docker-buildx
+                    # Install Buildx (Bump to Latest v0.31.1)
+                    curl -fSL https://github.com/docker/buildx/releases/download/v0.31.1/buildx-v0.31.1.linux-amd64 -o $DOCKER_CONFIG/cli-plugins/docker-buildx
                     chmod +x $DOCKER_CONFIG/cli-plugins/docker-buildx
                     
                     # Install Compose
