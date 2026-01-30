@@ -6,6 +6,8 @@ const instance = axios.create({
   withCredentials: true,
 });
 
+console.log('Axios Instance Loaded with URL:', instance.defaults.baseURL);
+
 instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
