@@ -16,6 +16,9 @@ pipeline {
         stage('Setup Docker Plugins') {
             steps {
                 sh '''
+                    # PROOF OF LIFE: Which commit are we building?
+                    git log -1
+                    
                     # Set config to current workspace
                     export DOCKER_CONFIG=$(pwd)/.docker_config
                     # Clean up previous bad installs
