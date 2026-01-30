@@ -9,7 +9,10 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                // Force clean start
+                deleteDir()
                 checkout scm
+                sh 'git log -1' // Verify commit immediately
             }
         }
 
