@@ -20,8 +20,8 @@ pipeline {
                     export DOCKER_CONFIG=$(pwd)/.docker_config
                     mkdir -p $DOCKER_CONFIG/cli-plugins
                     
-                    # Install Buildx
-                    curl -SL https://github.com/docker/buildx/releases/download/v0.11.2/buildx-v0.11.2.linux-amd64 -o $DOCKER_CONFIG/cli-plugins/docker-buildx
+                    # Install Buildx (Updated to v0.19.0)
+                    curl -SL https://github.com/docker/buildx/releases/download/v0.19.0/buildx-v0.19.0.linux-amd64 -o $DOCKER_CONFIG/cli-plugins/docker-buildx
                     chmod +x $DOCKER_CONFIG/cli-plugins/docker-buildx
                     
                     # Install Compose
