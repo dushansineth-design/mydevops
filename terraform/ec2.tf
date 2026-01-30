@@ -42,6 +42,11 @@ resource "aws_instance" "app_server" {
               mkdir -p /usr/local/lib/docker/cli-plugins
               curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
               chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+              # Install Docker Buildx (Required for 'docker compose build')
+              # Using specific version v0.19.0 to satisfy requirement >= 0.17.0
+              curl -SL https://github.com/docker/buildx/releases/download/v0.19.0/buildx-v0.19.0.linux-amd64 -o /usr/local/lib/docker/cli-plugins/docker-buildx
+              chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
               
               # Clone Project (Amazon Linux uses 'ec2-user')
               cd /home/ec2-user
