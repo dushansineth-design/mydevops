@@ -86,15 +86,18 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 // NOTE: You must create a "Secret File" credential in Jenkins with ID 'my-ec2-key' containing your pem file.
-                withCredentials([file(credentialsId: 'my-ec2-key', variable: 'PEM_KEY_FILE')]) {
+                withCredentials([
+                    file(credentialsId: 'my-ec2-key', variable: 'PEM_KEY_FILE'),
+                    usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
+                ]) {
                     sh """
                     # Secure local copy from credentials
                     cp "\$PEM_KEY_FILE" /tmp/deploy_key.pem
                     chmod 400 /tmp/deploy_key.pem
 
-                    # Deploy with Clean Build
+                    # Deploy with Clean Build (Pass DOCKER_USERNAME to EC2)
                     ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
-                    "cd ${PROJECT_DIR} && git fetch --all && git reset --hard origin/main && docker compose down && docker compose build --no-cache && docker compose up -d"
+                    "export DOCKER_USERNAME='${DOCKER_USERNAME}' && cd ${PROJECT_DIR} && git fetch --all && git reset --hard origin/main && docker compose down && docker compose build --no-cache && docker compose up -d"
                     
                     # Cleanup key
                     rm -f /tmp/deploy_key.pem
