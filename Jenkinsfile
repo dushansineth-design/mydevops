@@ -6,7 +6,7 @@ pipeline {
         DOCKER_API_VERSION = '1.44'
         EC2_USER = 'ec2-user'
         EC2_HOST = '3.91.209.132'
-        PEM_PATH = 'D:/3D OBJECTS/WEB/SEM 5/DevOps/DevOps Web/primenova.pem'
+        PEM_PATH = './jenkins_auth/primenova.pem'
         PROJECT_DIR = '/home/ec2-user/mydevops'
     }
 
@@ -44,7 +44,16 @@ pipeline {
             steps {
                 sh '''
                     export DOCKER_CONFIG=$(pwd)/.docker_config
+                    
+                    # Try to clean up default project
+                    $DOCKER_CONFIG/cli-plugins/docker-compose down --remove-orphans || true
+                    # Try to clean up named project
                     $DOCKER_CONFIG/cli-plugins/docker-compose -p mydevops down --remove-orphans || true
+                    
+                    # Force kill any remaining containers holding our ports
+                    docker rm -f $(docker ps -q --filter "publish=27017") 2>/dev/null || true
+                    docker rm -f $(docker ps -q --filter "publish=5050") 2>/dev/null || true
+                    docker rm -f $(docker ps -q --filter "publish=5174") 2>/dev/null || true
                 '''
             }
         }
@@ -61,8 +70,16 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sh """
-                ssh -i "${PEM_PATH}" -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
-                "cd ${PROJECT_DIR} && git pull origin main && docker compose down && docker compose up -d --build"
+                # Secure the key by copying to a temp location with restricted permissions
+                cp "${PEM_PATH}" /tmp/deploy_key.pem
+                chmod 400 /tmp/deploy_key.pem
+
+                # Deploy with Clean Build
+                ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
+                "cd ${PROJECT_DIR} && git fetch --all && git reset --hard origin/main && docker compose down && docker compose build --no-cache && docker compose up -d"
+                
+                # Cleanup key
+                rm -f /tmp/deploy_key.pem
                 """
             }
         }
@@ -70,8 +87,13 @@ pipeline {
         stage('Health Check (EC2)') {
             steps {
                 sh """
-                ssh -i "${PEM_PATH}" -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
+                cp "${PEM_PATH}" /tmp/deploy_key.pem
+                chmod 400 /tmp/deploy_key.pem
+
+                ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
                 "docker ps"
+
+                rm -f /tmp/deploy_key.pem
                 """
             }
         }
