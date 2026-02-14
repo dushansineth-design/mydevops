@@ -4,46 +4,43 @@ pipeline {
     environment {
         // Fix for Docker client/server version mismatch
         DOCKER_API_VERSION = '1.44'
+        EC2_USER = 'ec2-user'
+        EC2_HOST = '3.91.209.132'
+        PEM_PATH = 'D:/3D OBJECTS/WEB/SEM 5/DevOps/DevOps Web/primenova.pem'
+        PROJECT_DIR = '/home/ec2-user/mydevops'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Force clean start
-                deleteDir()
+                deleteDir()       // Clean workspace
                 checkout scm
-                sh 'git log -1' // Verify commit immediately
+                sh 'git log -1'   // Verify latest commit
             }
         }
 
         stage('Setup Docker Plugins') {
             steps {
                 sh '''
-                    # PROOF OF LIFE: Which commit are we building?
-                    git log -1
-                    
-                    # Set config to current workspace
                     export DOCKER_CONFIG=$(pwd)/.docker_config
-                    # Clean up previous bad installs
                     rm -rf $DOCKER_CONFIG
                     mkdir -p $DOCKER_CONFIG/cli-plugins
-                    
-                    # Install Buildx (Bump to Latest v0.31.1)
+
+                    # Buildx
                     curl -fSL https://github.com/docker/buildx/releases/download/v0.31.1/buildx-v0.31.1.linux-amd64 -o $DOCKER_CONFIG/cli-plugins/docker-buildx
                     chmod +x $DOCKER_CONFIG/cli-plugins/docker-buildx
-                    
-                    # Install Compose
+
+                    # Compose
                     curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
                     chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
-                    
+
                     # Verify
-                    ls -l $DOCKER_CONFIG/cli-plugins
                     $DOCKER_CONFIG/cli-plugins/docker-buildx version
                 '''
             }
         }
 
-        stage('Clean Up') {
+        stage('Clean Up Local Containers') {
             steps {
                 sh '''
                     export DOCKER_CONFIG=$(pwd)/.docker_config
@@ -52,62 +49,44 @@ pipeline {
             }
         }
 
-        stage('Build & Deploy') {
+        stage('Build Local Docker (Optional)') {
             steps {
                 sh '''
                     export DOCKER_CONFIG=$(pwd)/.docker_config
-                    
-                    echo "--- DEBUG INFO ---"
-                    ls -l $DOCKER_CONFIG/cli-plugins
-                    $DOCKER_CONFIG/cli-plugins/docker-buildx version || echo "Direct execution failed"
-                    docker --config $DOCKER_CONFIG buildx version || echo "CLI execution failed"
-                    echo "------------------"
-
-                    # Use docker CLI wrapper to ensure plugins are loaded correctly
                     docker --config $DOCKER_CONFIG compose -p mydevops up --build -d
                 '''
             }
         }
 
         stage('Deploy to EC2') {
-        steps {
-            sh '''
-            ssh -o StrictHostKeyChecking=no ec2-user@3.91.209.132 "
-                cd /home/ec2-user/mydevops &&
-                git pull origin main &&
-                docker compose down &&
-                docker compose up -d --build
-            "
-            '''
-        }
-    }
-
-        stage('Health Check') {
             steps {
-                // Wait briefly for services to initialize
-                sleep 5
-                // Verify containers are listed and running
-                sh 'docker ps'
+                sh """
+                ssh -i "${PEM_PATH}" -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
+                "cd ${PROJECT_DIR} && git pull origin main && docker compose down && docker compose up -d --build"
+                """
+            }
+        }
+
+        stage('Health Check (EC2)') {
+            steps {
+                sh """
+                ssh -i "${PEM_PATH}" -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
+                "docker ps"
+                """
             }
         }
     }
 
-
     post {
         success {
             script {
-                echo "Build Successful! Pushing tag to GitHub..."
-                // NOTE: To push back to GitHub, you need to configure credentials in Jenkins
-                // withId: 'github-credentials-id' is a placeholder for your Jenkins credential ID
-                
-                // sh '''
-                //     git config user.email "jenkins@example.com"
-                //     git config user.name "Jenkins CI"
-                //     git tag -a "deploy-${BUILD_NUMBER}" -m "Deployed build #${BUILD_NUMBER}"
-                //     git push origin "deploy-${BUILD_NUMBER}"
-                // '''
-                
-                echo "To enable auto-pushing tags, uncomment the script block above and configure Jenkins credentials."
+                echo "Build and Deployment Successful!"
+            }
+        }
+
+        failure {
+            script {
+                echo "Build or Deployment Failed!"
             }
         }
     }
