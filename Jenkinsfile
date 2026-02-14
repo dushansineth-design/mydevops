@@ -69,6 +69,19 @@ pipeline {
             }
         }
 
+        stage('Deploy to EC2') {
+        steps {
+            sh '''
+            ssh -o StrictHostKeyChecking=no ec2-user@3.91.209.132 "
+                cd /home/ec2-user/mydevops &&
+                git pull origin main &&
+                docker compose down &&
+                docker compose up -d --build
+            "
+            '''
+        }
+    }
+
         stage('Health Check') {
             steps {
                 // Wait briefly for services to initialize
