@@ -44,6 +44,7 @@ pipeline {
                 // NOTE: Create a "Username with password" credential in Jenkins with ID 'docker-hub-creds'
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh '''
+                        export DOCKER_CONFIG=$(pwd)/.docker_config
                         echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
                     '''
                 }
