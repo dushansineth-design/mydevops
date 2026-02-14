@@ -73,7 +73,7 @@ export default function Login() {
             type="submit"
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white font-bold text-lg shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transition-all duration-200"
           >
-            LOGIN HERE!
+            LOGIN HERE
           </button>
         </form>
       </div>
