@@ -91,16 +91,22 @@ pipeline {
                     usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
                 ]) {
                     sh """
+                    # Unique key path to avoid collisions/permission issues
+                    KEY_PATH="/tmp/deploy_key_${BUILD_NUMBER}.pem"
+                    
+                    # Ensure clean starts
+                    rm -f \$KEY_PATH
+
                     # Secure local copy from credentials
-                    cp "\$PEM_KEY_FILE" /tmp/deploy_key.pem
-                    chmod 400 /tmp/deploy_key.pem
+                    cp "\$PEM_KEY_FILE" \$KEY_PATH
+                    chmod 400 \$KEY_PATH
 
                     # Deploy with Clean Build (Pass DOCKER_USERNAME to EC2)
-                    ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
+                    ssh -i \$KEY_PATH -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
                     "export DOCKER_USERNAME='${DOCKER_USERNAME}' && cd ${PROJECT_DIR} && git fetch --all && git reset --hard origin/main && docker compose down && docker compose build --no-cache && docker compose up -d"
                     
                     # Cleanup key
-                    rm -f /tmp/deploy_key.pem
+                    rm -f \$KEY_PATH
                     """
                 }
             }
@@ -110,13 +116,16 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'my-ec2-key', variable: 'PEM_KEY_FILE')]) {
                     sh """
-                    cp "\$PEM_KEY_FILE" /tmp/deploy_key.pem
-                    chmod 400 /tmp/deploy_key.pem
+                    KEY_PATH="/tmp/deploy_key_${BUILD_NUMBER}.pem"
+                    rm -f \$KEY_PATH
 
-                    ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
+                    cp "\$PEM_KEY_FILE" \$KEY_PATH
+                    chmod 400 \$KEY_PATH
+
+                    ssh -i \$KEY_PATH -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
                     "docker ps"
 
-                    rm -f /tmp/deploy_key.pem
+                    rm -f \$KEY_PATH
                     """
                 }
             }
