@@ -62,7 +62,7 @@ pipeline {
             steps {
                 sh """
                 ssh -i "${PEM_PATH}" -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
-                "cd ${PROJECT_DIR} && git pull origin main && docker compose down && docker compose up -d --build"
+                "cd ${PROJECT_DIR} && git fetch --all && git reset --hard origin/main && docker compose down && docker compose build --no-cache && docker compose up -d"
                 """
             }
         }
