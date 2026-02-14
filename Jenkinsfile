@@ -47,7 +47,7 @@ pipeline {
             steps {
                 sh '''
                     export DOCKER_CONFIG=$(pwd)/.docker_config
-                    $DOCKER_CONFIG/cli-plugins/docker-compose down --remove-orphans || true
+                    $DOCKER_CONFIG/cli-plugins/docker-compose -p mydevops down --remove-orphans || true
                 '''
             }
         }
@@ -64,7 +64,7 @@ pipeline {
                     echo "------------------"
 
                     # Use docker CLI wrapper to ensure plugins are loaded correctly
-                    docker --config $DOCKER_CONFIG compose up --build -d
+                    docker --config $DOCKER_CONFIG compose -p mydevops up --build -d
                 '''
             }
         }
