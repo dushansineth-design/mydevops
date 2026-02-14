@@ -44,7 +44,16 @@ pipeline {
             steps {
                 sh '''
                     export DOCKER_CONFIG=$(pwd)/.docker_config
+                    
+                    # Try to clean up default project
+                    $DOCKER_CONFIG/cli-plugins/docker-compose down --remove-orphans || true
+                    # Try to clean up named project
                     $DOCKER_CONFIG/cli-plugins/docker-compose -p mydevops down --remove-orphans || true
+                    
+                    # Force kill any remaining containers holding our ports
+                    docker rm -f $(docker ps -q --filter "publish=27017") 2>/dev/null || true
+                    docker rm -f $(docker ps -q --filter "publish=5050") 2>/dev/null || true
+                    docker rm -f $(docker ps -q --filter "publish=5174") 2>/dev/null || true
                 '''
             }
         }
