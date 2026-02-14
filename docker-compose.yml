@@ -13,7 +13,7 @@ services:
 
 
   backend:
-    image: mydevops-backend
+    image: ${DOCKER_USERNAME}/mydevops-backend
     build: ./mern-auth-backend
     ports:
       - "5050:5000"
@@ -26,7 +26,7 @@ services:
       - mongo
 
   frontend:
-    image: mydevops-frontend
+    image: ${DOCKER_USERNAME}/mydevops-frontend
     build:
       context: ./mern-auth-frontend
       dockerfile: Dockerfile.dev

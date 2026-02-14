@@ -6,8 +6,12 @@ pipeline {
         DOCKER_API_VERSION = '1.44'
         EC2_USER = 'ec2-user'
         EC2_HOST = '3.91.209.132'
-        PEM_PATH = './jenkins_auth/primenova.pem'
         PROJECT_DIR = '/home/ec2-user/mydevops'
+        // TODO: Replace with your actual Docker Hub username
+        DOCKER_USERNAME = 'dushan2002'
+        // TODO: Best practice is to use Jenkins Credentials. 
+        // DO NOT COMMIT REAL TOKENS HERE. Set this env var in Jenkins Configuration.
+        DOCKER_PASSWORD = 'your-dockerhub-access-token' 
     }
 
     stages {
@@ -40,6 +44,14 @@ pipeline {
             }
         }
 
+        stage('Login to Docker Hub') {
+            steps {
+                sh '''
+                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                '''
+            }
+        }
+
         stage('Clean Up Local Containers') {
             steps {
                 sh '''
@@ -58,43 +70,51 @@ pipeline {
             }
         }
 
-        stage('Build Local Docker (Optional)') {
+        stage('Build & Push Docker Images') {
             steps {
                 sh '''
                     export DOCKER_CONFIG=$(pwd)/.docker_config
-                    docker --config $DOCKER_CONFIG compose -p mydevops up --build -d
+                    # Build images with username prefix
+                    docker --config $DOCKER_CONFIG compose -p mydevops build
+                    # Push images to Docker Hub
+                    docker --config $DOCKER_CONFIG compose -p mydevops push
                 '''
             }
         }
 
         stage('Deploy to EC2') {
             steps {
-                sh """
-                # Secure the key by copying to a temp location with restricted permissions
-                cp "${PEM_PATH}" /tmp/deploy_key.pem
-                chmod 400 /tmp/deploy_key.pem
+                // NOTE: You must create a "Secret File" credential in Jenkins with ID 'my-ec2-key' containing your pem file.
+                withCredentials([file(credentialsId: 'my-ec2-key', variable: 'PEM_KEY_FILE')]) {
+                    sh """
+                    # Secure local copy from credentials
+                    cp "\$PEM_KEY_FILE" /tmp/deploy_key.pem
+                    chmod 400 /tmp/deploy_key.pem
 
-                # Deploy with Clean Build
-                ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
-                "cd ${PROJECT_DIR} && git fetch --all && git reset --hard origin/main && docker compose down && docker compose build --no-cache && docker compose up -d"
-                
-                # Cleanup key
-                rm -f /tmp/deploy_key.pem
-                """
+                    # Deploy with Clean Build
+                    ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
+                    "cd ${PROJECT_DIR} && git fetch --all && git reset --hard origin/main && docker compose down && docker compose build --no-cache && docker compose up -d"
+                    
+                    # Cleanup key
+                    rm -f /tmp/deploy_key.pem
+                    """
+                }
             }
         }
 
         stage('Health Check (EC2)') {
             steps {
-                sh """
-                cp "${PEM_PATH}" /tmp/deploy_key.pem
-                chmod 400 /tmp/deploy_key.pem
+                withCredentials([file(credentialsId: 'my-ec2-key', variable: 'PEM_KEY_FILE')]) {
+                    sh """
+                    cp "\$PEM_KEY_FILE" /tmp/deploy_key.pem
+                    chmod 400 /tmp/deploy_key.pem
 
-                ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
-                "docker ps"
+                    ssh -i /tmp/deploy_key.pem -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \\
+                    "docker ps"
 
-                rm -f /tmp/deploy_key.pem
-                """
+                    rm -f /tmp/deploy_key.pem
+                    """
+                }
             }
         }
     }
