@@ -7,11 +7,6 @@ pipeline {
         EC2_USER = 'ec2-user'
         EC2_HOST = '3.91.209.132'
         PROJECT_DIR = '/home/ec2-user/mydevops'
-        // TODO: Replace with your actual Docker Hub username
-        DOCKER_USERNAME = 'dushan2002'
-        // TODO: Best practice is to use Jenkins Credentials. 
-        // DO NOT COMMIT REAL TOKENS HERE. Set this env var in Jenkins Configuration.
-        DOCKER_PASSWORD = 'your-dockerhub-access-token' 
     }
 
     stages {
@@ -46,9 +41,12 @@ pipeline {
 
         stage('Login to Docker Hub') {
             steps {
-                sh '''
-                    echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-                '''
+                // NOTE: Create a "Username with password" credential in Jenkins with ID 'docker-hub-creds'
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh '''
+                        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+                    '''
+                }
             }
         }
 
@@ -72,13 +70,15 @@ pipeline {
 
         stage('Build & Push Docker Images') {
             steps {
-                sh '''
-                    export DOCKER_CONFIG=$(pwd)/.docker_config
-                    # Build images with username prefix
-                    docker --config $DOCKER_CONFIG compose -p mydevops build
-                    # Push images to Docker Hub
-                    docker --config $DOCKER_CONFIG compose -p mydevops push
-                '''
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh '''
+                        export DOCKER_CONFIG=$(pwd)/.docker_config
+                        # Build images with username prefix
+                        docker --config $DOCKER_CONFIG compose -p mydevops build
+                        # Push images to Docker Hub
+                        docker --config $DOCKER_CONFIG compose -p mydevops push
+                    '''
+                }
             }
         }
 
