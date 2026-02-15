@@ -12,7 +12,7 @@ export default function Home() {
 
       <div className="relative z-10 text-center max-w-4xl">
         <h1 className="text-6xl md:text-8xl font-extrabold text-gray-900 tracking-tight mb-6 animate-fade-in-down">
-          Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600">PrimeNova</span>
+          Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-600">PrimeNova!</span>
         </h1>
 
         <p className="text-xl md:text-2xl text-gray-600 mb-10 animate-fade-in-up max-w-2xl mx-auto leading-relaxed">
